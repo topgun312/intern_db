@@ -25,29 +25,30 @@ class ExportingDataToDB:
         global df
         for file in self.dir.iterdir():
             if file.is_file():
-                df = pd.read_excel(io=file, index_col=0, skiprows=6).iloc[
-                    :, [0, 1, 2, 3, 4, 13]
-                ]
+                df = pd.read_excel(io=file, engine="xlrd", index_col=None)
                 date_filter = re.sub(r"\D", "", file.name)[:8]
                 correct_date = (
                     date_filter[:4] + "." + date_filter[4:6] + "." + date_filter[6:8]
                 )
 
+                index = (
+                        df[df["Форма СЭТ-БТ"] == "Единица измерения: Метрическая тонна"].index[0]
+                        + 1
+                )
+                df = df.iloc[index:, [1, 2, 3, 4, 5, 14]]
                 df.rename(
                     columns={
-                        "Код\nИнструмента": "exchange_product_id",
-                        "Наименование\nИнструмента": "exchange_product_name",
-                        "Базис\nпоставки": "delivery_basis_name",
-                        "Объем\nДоговоров\nв единицах\nизмерения": "volume",
-                        "Обьем\nДоговоров,\nруб.": "total",
-                        "Количество\nДоговоров,\nшт.": "count",
+                        "Форма СЭТ-БТ": "exchange_product_id",
+                        "Unnamed: 2": "exchange_product_name",
+                        "Unnamed: 3": "delivery_basis_name",
+                        "Unnamed: 4": "volume",
+                        "Unnamed: 5": "total",
+                        "Unnamed: 14": "count",
                     },
                     inplace=True,
                 )
                 df = df[df["count"] != "-"]
-                df.insert(
-                    loc=2, column="oil_id", value=df["exchange_product_id"].str[:4]
-                )
+                df.insert(loc=2, column="oil_id", value=df["exchange_product_id"].str[:4])
                 df.insert(
                     loc=3,
                     column="delivery_basis_id",
@@ -60,7 +61,7 @@ class ExportingDataToDB:
                 )
                 df.insert(loc=9, column="date", value=correct_date)
                 df = df.fillna("-")
-                df = df.iloc[1:]
+                df = df.iloc[2:]
                 df = df.iloc[:-2]
 
             yield df
